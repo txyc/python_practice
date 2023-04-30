@@ -1,0 +1,17 @@
+该仓库的主要是用于个人学习Python的语法，当前的考虑的语法学习项目如下：
+1、基础语法——元组、集合、列表、字典
+2、面对对象的编程——类、继承、混入、元类
+3、深拷贝和浅拷贝
+4、闭包的应用——lambda函数、装饰器
+5、异常处理——try-catch-else-finally
+6、外部参数的调用-argv-argparse-click
+7、Python配置环境变量
+8、hashlib的应用——MD5、SHA值的生成
+9、re模块的使用——字符的匹配match/search/findall的差异
+10、自动化测试框架——unittest/pytest
+11、编程规范——pep8/pylint
+12、系统路径——split/os.sep
+13、外部命令的调用——调用Linux/windows下的命令或者应用程序作为参数输入
+14、web页面的控制模块——
+15、爬虫的使用
+16、Python的其他应用——CppCheck
