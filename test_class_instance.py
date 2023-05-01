@@ -1,4 +1,12 @@
+# 类和实例的具体表现
+# 1、类属性与实例属性的差异：属性不带下划线、带单下划线、带双下划线、前后都带下划线
+# 2、私有方法、类方法和静态方法
+# 3、@property的魔法函数使用
+# 4、
+
 import os
+
+class Person()
 
 class Student(object):
     def __init__(self, name, score):
