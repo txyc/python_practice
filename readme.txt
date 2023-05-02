@@ -4,7 +4,7 @@
 3、深拷贝和浅拷贝
 4、闭包的应用——lambda函数、装饰器
 5、异常处理——try-catch-else-finally
-6、外部参数的调用-argv-argparse-click
+6、三种接收命令行传入参数方法-argv-argparse-click
 7、Python配置环境变量
 8、hashlib的应用——MD5、SHA值的生成
 9、re模块的使用——字符的匹配match/search/findall的差异

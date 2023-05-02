@@ -8,5 +8,3 @@ parser.add_argument('-n','--name',dest='name',type=str,default='hello world',hel
 args = parser.parse_args()
 username = args.name
 print(username)
-
-
