@@ -1,0 +1,10 @@
+# Python中异常的处理主要是try-except-else-finally的样式
+# 另外还需要关注不同代码块中存在return语句的处理方式
+# try:
+#     正常的操作
+# except:
+#     发生异常，执行这块代码
+# else:
+#     未发生异常时，执行这块代码
+# finally:
+#     无论是否发生异常，都执行这块代码
