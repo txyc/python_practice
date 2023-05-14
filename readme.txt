@@ -15,4 +15,5 @@
 14、web网络应用——urllib/request/selenium
 15、爬虫的使用
 16、Python的其他应用——CppCheck
-17、日志模块
+17、日志模块-logging
+18、配置文件yaml/json/xml/excel

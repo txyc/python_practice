@@ -37,9 +37,9 @@ if __name__ == "__main__":
     runner.run(suite02)
     
     report_dir = os.sep.join([os.path.dirname(__file__), "reports"])
-    report_file = os.sep.join([os.path.dirname(__file__), "reports", "html_report.html"])
-    if not os.path.exists(os.sep.join([os.path.dirname(__file__), "reports"])):
-        os.mkdir(os.sep.join([os.path.dirname(__file__), "reports"]))
+    report_file = os.sep.join([report_dir, "html_report.html"])
+    if not os.path.exists(report_dir):
+        os.mkdir(report_dir)
     print('-'*30)
     with open(report_file, 'wb') as fl:
         runner1 = HTMLTestRunner.HTMLTestRunner(title='测试标题', description='描述', stream=fl)
