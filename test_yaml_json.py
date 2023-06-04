@@ -20,7 +20,12 @@ if __name__ == "__main__":
     print(data_test1)
 
     json_path = os.sep.join([config_dir,"jsondata.json"])
+    f = open(json_path,'w')
+    json_test = json.dumps(data_test)
+    f.write(json_test)
+    f.close()
+    
     f = open(json_path,"rb")
-    data_test2 = json.loads(f)
+    data_test2 = json.loads(f.read())
     f.close()
     print(data_test2)
