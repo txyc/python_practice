@@ -1,7 +1,7 @@
 import pytest
 import os
 
-if __name__ == "__main__":
+def test_excute():
     report_dir = os.sep.join([os.path.dirname(__file__), "reports"])
     if not os.path.exists(report_dir):
         os.mkdir(report_dir)
@@ -10,3 +10,6 @@ if __name__ == "__main__":
     excute_case = os.sep.join([os.path.dirname(__file__),"test_check01.py"])
     command_line = ["-vs", excute_case, "--html={:s}".format(report_html), "--alluredir={:s}".format(allure_dir)]
     pytest.main(command_line)
+
+if __name__ == "__main__":
+    test_excute()

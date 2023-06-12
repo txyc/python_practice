@@ -1,4 +1,5 @@
 # 这里仅针对unittest的做简单的整理说明，unittest框架的核心概念如下：
+# unittest是Python自带的测试框架，无需额外安装，但是配合用例结果呈现的http工具需要额外安装
 # 1、testcase——测试用例，继承unittest.TestCase类，可使用unittest.mian()来执行用例
 # 2、testsuite——测试套，创建unittest.TestSuite()实例，然后使用addTest()添加用例到测试套中
 # 3、testrunner——测试运行套件，创建unittest.TextTestRunner()实例，然后通过run()方法运行测试套任务
