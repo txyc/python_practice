@@ -1,0 +1,13 @@
+<html>
+
+<body>
+    <h1>用户信息录入</h1>
+    <a href="/back"><button>返回</button></a>
+    <form action="{{ url_for('submit')}}" method="post">
+        <input type="text" name="name"><br>
+        <input type="text" name="contact_info"><br>
+        <input type="submit" value="提交">
+    </form>
+</body>
+
+</html>
