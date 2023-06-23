@@ -5,10 +5,8 @@
 #       将selenium运行chrome的数据临时存储目录设置为长期目录
 # 方法三：登陆指定网址获取cookies后，用于切换到其他网页时保持登陆
 #       cookies的获取使用方法cookies = driver.get_cookies()
-#       cookie添加是需要根据需要过滤，并逐个添加
+#       cookie添加是需要根据domain过滤，并逐个添加
 # 
-import os
-import yaml
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -66,7 +64,6 @@ def login_browser_with_userdata(login_url, username, password, web_url):
 def login_save_session(login_url, username, password, yaml_path):
     # 创建浏览器选项实例
     browser = webdriver.Chrome()
-    print(browser.capabilities['browserVersion'])
     # 设置隐式等待时长
     browser.implicitly_wait(5)
     # 连接指定连接
@@ -98,6 +95,7 @@ def login_save_session(login_url, username, password, yaml_path):
                                 'value':cookie['value'],
                                 'path':'/',
                                 'expires':None})
+            break
     time.sleep(8)
     browser.get(web_url)
     time.sleep(30)
