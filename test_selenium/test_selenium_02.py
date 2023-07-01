@@ -6,7 +6,7 @@
 # 方法三：登陆指定网址获取cookies后，用于切换到其他网页时保持登陆
 #       cookies的获取使用方法cookies = driver.get_cookies()
 #       cookie添加是需要根据domain过滤，并逐个添加
-# 
+# 方法四：在新标签页或者新窗口中打开登陆连接后完成登陆
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -61,7 +61,7 @@ def login_browser_with_userdata(login_url, username, password, web_url):
     time.sleep(30)
 
 # 方法三：登陆指定网址获取cookies后，用于切换到其他网页时保持登陆
-def login_save_session(login_url, username, password, yaml_path):
+def login_save_session(login_url, username, password, web_url):
     # 创建浏览器选项实例
     browser = webdriver.Chrome()
     # 设置隐式等待时长
@@ -98,7 +98,7 @@ def login_save_session(login_url, username, password, yaml_path):
             break
     time.sleep(8)
     browser.get(web_url)
-    time.sleep(30)
+    time.sleep(8)
 
 if __name__ == "__main__":
     login_url = "https://login.bce.baidu.com/?account="
@@ -108,4 +108,4 @@ if __name__ == "__main__":
     yaml_path = './session.yaml'
     # login_opened_browser(web_url)
     # login_browser_with_userdata(login_url, username, password, web_url)
-    login_save_session(login_url, username, password, yaml_path)
+    login_save_session(login_url, username, password, web_url)
