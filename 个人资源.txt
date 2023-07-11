@@ -1,0 +1,81 @@
+# #######################################################
+winndows下的jenkins服务
+http://localhost:6535/ root/Tianxin_2015
+云服务器下的jenkins服务
+http://121.43.189.123:8099/ admin/14348e6e11a74135885ce97ae50b24e6
+云服务器下docker内的jenkins服务
+http://121.43.189.123:9095/ admin/b30253c32b4e4db7b53c08a7279a4183
+
+# #######################################################
+百度地图的API接口——可用于天气查询、路径规划等
+
+# 个人ak申请地址
+https://lbsyun.baidu.com/apiconsole/key#/home
+# 天气数据获取接口
+https://api.map.baidu.com/weather/v1/?district_id=222405&output=json&data_type=all&ak=PF3n59XjIRjESKvQmC1GHPTG8GZTGteW
+
+# #########################################################
+roll服务查询——可用于天气、城市id、区号信息、ip、手机归属地等多种查询方法
+
+# 地址
+https://www.mxnzp.com/doc/list
+# 个人 app_id和app_secret：
+APPID: ooyx7tluqonjo1sx
+APPSECRET: NmdvQjI2MjBkRllRNnRuaWJnSUl6dz09
+
+# 天气获取接口
+https://www.mxnzp.com/api/weather/current/深圳市?app_id=ooyx7tluqonjo1sx&app_secret=NmdvQjI2MjBkRllRNnRuaWJnSUl6dz09
+# 城市id获取接口
+https://www.mxnzp.com/api/address/list?app_id=ooyx7tluqonjo1sx&app_secret=NmdvQjI2MjBkRllRNnRuaWJnSUl6dz09
+
+# #########################################################
+showapi网址——用于查询天气等信息
+https://www.showapi.com  txyc/Tianxin_2015
+
+查询天气的api的链接：
+https://route.showapi.com/9-2?
+showapi_appid: 1453913
+showapi_sign: 916593ab6efe416d985135be43714151
+
+# ############################################################
+用于接口的测试的某个购物车网站
+个人测试账户：18384121601/Admin_123456
+电商首页：http://www.testingedu.com.cn:8000/
+登录页面：http://www.testingedu.com.cn:8000/index.php/Home/user/login.html
+购物车页面：http://www.testingedu.com.cn:8000/index.php/Home/Cart/index.html
+登陆调用接口：http://www.testingedu.com.cn:8000/index.php?m=Home&c=User&a=do_login&t=0.3508523582926
+查看购物车调用接口：http://www.testingedu.com.cn:8000/index.php?m=Home&c=Cart&a=header_cart_list
+
+https://dl.google.com/android/adt/adt-bundle-windows-x86_64-20140702.zip?utm_source=androiddevtools&utm_medium=website
+
+# ############################################################
+用于接口测试的自动化平台——18384121601/Admin_123456
+http://39.108.55.18/mypro/#/home
+
+登陆接口：http://39.108.55.18/mypro/api/user/login
+
+# ############################################################
+用于接口测试的token项目
+http://www.testingedu.com.cn:8081/inter/
+
+登陆接口：http://www.testingedu.com.cn:8081/inter/SOAP?wsdl
+
+# ############################################################
+Appium的测试环境配置
+华为Mate50E的appium连接配置
+    "platformVersion": "12",
+    "deviceName": "CET-AL60",
+    "platformName": "Android",
+获取方法：
+adb shell getprop ro.build.version.release
+adb devices -l
+
+先打开指定App，然后在通过adb命令获取app信息
+	"appPackage": "com.huawei.calculator",
+    "appActivity": "com.huawei.calculator.Calculator",
+获取方法：
+adb shell dumpsys activity | findstr "mResume"
+
+# ############################################################
+各种格式化、工具的集合网站
+https://tools.fun/

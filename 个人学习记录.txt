@@ -1,0 +1,739 @@
+# #############################################
+# 时间：20230606
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+一、docker部署jenkins服务说明
+
+开始之前最好检查更改一下yum镜像源，这里由于使用的是阿里云服务器，镜像源已经帮我们部署好了
+
+1、安装docker
+# 删除已安装的docker环境
+sudo yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine
+
+# 安装docker所需要的依赖包
+sudo yum install -y yum-utils
+
+# 创建docker仓库
+sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+
+2、启动docker并部署服务
+# 启动docker
+sudo systemctl start docker
+
+# 下载镜像
+docker pull jenkins/jenkins
+
+# 创建文件夹
+mkdir -p /usr/local/jenkins
+# 权限
+chmod 777 /usr/local/jenkins
+# 创建docker部署jenkins环境的映射，要注意这里的9095端口需要事先在阿里云服务器上放开限制
+docker run -d -uroot -p 9095:8080 -p 50000:50000 --name jenkins -v /usr/local/jenkins:/var/jenkins_home -v /etc/localtime:/etc/localtime jenkins/jenkins
+
+
+# docker容器的启动
+docker ps -a # 查询容器id的指令
+docker start {contain_id}# 根据上述指令查出的容器id启动jenkins服务
+
+3、docker容器内的服务配置
+# 容器启动之后在浏览器输入如下网址即可打开jenkins服务
+http://121.43.189.123:9095/
+
+# 进入docker内jenkins服务环境获取管理员初始密码
+docker exec -it ee8339704429 /bin/bash
+cat /var/jenkins_home/secrets/initialAdminPassword
+或者docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+# 更改jenkins插件的镜像原
+cd /usr/local/jenkins
+cat hudson.model.UpdateCenter.xml 
+# 将url更改为 https://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json
+
+# 重启docker容器
+docker restart jenkins
+
+上述操作完成后在浏览器输入http://ip:port，注意如果使用阿里云服务器，需要在安全配置里放开端口限制
+
+docker容器的删除
+docker rm {contain_id}
+
+# #############################################
+# 时间：20230606
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+二、linux下jenkins服务的安装部署
+
+【注意】阿里云配置jenkins服务需要在安全组配置规则处放开端口限制
+
+1、手动安装java的jdk，并配置刷新环境变量——这里需要注意jenkins与jdk的配套关系，当前最新版本jenkins仅支持jdk11-jdk17
+路径：https://www.oracle.com/java/technologies/javase/jdk18-archive-downloads.html
+将下载的文件放置到指定路径后，下发如下命令进行解压
+tar -zxvf jdk-18.0.2.1_linux-x64_bin.tar.gz
+使用如下命令刷新环境变量
+vi /etc/profile
+
+export JAVA_HOME=/usr/local/java/jdk-18.0.2.1/
+export CLASSPATH=$:CLASSPATH:$JAVA_HOME/lib/
+export PATH=$PATH:$JAVA_HOME/bin
+
+2、配置jenkins下载源，并安装jenkins服务
+wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo --no-check-certificate
+
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+yum install jenkins
+
+3、配置jenkins以来的java路径
+which java # 查询使用的java环境路径
+vi /etc/init.d/jenkins
+#这里填入which java查找到的java路径
+
+4、更改jenkins的启动端口和账户组
+vi /etc/sysconfig/jenkins
+vi /usr/lib/systemd/system/jenkins.service
+# 将jenkins的用户名和所属用户组均改为root
+# 将jenkins的启动端口号改为阿里云放开的端口限制
+
+5、启动jenkins服务
+systemctl daemon-reload
+#jenkins服务启停命令组1
+systemctl start jenkins.service
+systemctl stop jenkins.service
+systemctl status jenkins.service
+#jenkins服务启停命令组2
+cd /etc/init.d
+./jenkins start
+./jenkins stop
+./jenkins status
+
+上述操作完成后在浏览器输入http://ip:port，注意如果使用阿里云服务器，需要在安全配置里放开端口限制
+
+# #############################################
+# 时间：20230608
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+四、unittest自动化测试框架的使用
+
+unittest是Python自带的测试框架，无需额外安装，但是配合用例结果呈现的http工具（HTMLTestRunner和BeautifulReport）需要额外安装
+
+1、testcase——测试用例，必须继承unittest.TestCase类，其中的测试方法必须使用test开头，单个用例中使用unittest.mian()来执行，测试方法的执行顺序根据Case序号决定，并非由代码顺序决定
+
+2、testsuite——测试套，创建unittest.TestSuite()实例，然后使用addTest()添加用例到测试套中，如果存在多个测试文件，可以使用TestLoader组件去加载测试用例
+
+3、testrunner——测试运行套件，创建unittest.TextTestRunner()实例，然后通过run()方法运行测试套任务
+
+4、testloader——测试加载套件，创建unittest.TestLoader()等实例，然后通过discover()获取需要执行的测试用例
+  unittest.defaultTestLoader组件下的discover()方法可以实现匹配文件名来加载测试用例，方法传入的具体参数如下：
+    discover(start_dir, pattern=‘test*.py’, top_level_dir=None)
+    |-  start_dir：要测试的模块名货测试用例目录
+    |-  pattern=“test*.py”： 表示用例文件名的匹配原则。 此处匹配文件名以“test”开头的“.py”类型的文件，*表示任意字符
+    |-  top_level_dir=None：测试模块的顶层目录，一般默认为None
+
+5、testfixture——测试夹具，主要用于实现测试环境的前置设置(setup)和后置还原(teardown)
+  测试夹具中控制级别分为函数级、类级、模块级，其中：
+  函数级——def setUp()/tearDown():每个测试函数执行前都会执行setUp，执行后都会执行tearDown
+  类级——def setUpClass()/tearDownClass():测试类执行前都会执行setUpClass，执行后都会执行tearDownClass，在类中需要加上@classmethod装饰器
+  模块级——def setUpModule()/tearDownModule():测试模块执行前都会执行setUpModule，执行后都会执行tearDownModule
+
+6、常用的断言方法举例：
+    assertEqual(a, b) --用于验证a == b
+    assertNotEqual(a, b) --用于验证a != b
+    assertTrue(x) --用于验证x的布尔值为真
+    assertFalse(x) --用于验证x的布尔值为假
+    assertIn(a, b) --用于验证a in b
+    assertNotIn(a, b) --用于验证a not in b
+
+7、测试报告呈现，如果测试报告不是很重要，可以采用unittest自带的TextTestRunner来完成报告的输出，但是一般而言还是配合HTMLTestRunner和BeautifulReport工具，实现html呈现较为合适
+  其中HTMLTestRunner的报告相对简单，但是原始版本仅支持python2.x，使用python3.x需要做部分修改，修改方法可参考：https://blog.csdn.net/cheng_jeff/article/details/121238308
+  BeautifulReport的报告呈现要更为美观，python3.x版本可直接使用
+  
+  TextTestRunner输出方式：
+    with open(report_file, 'wb') as fl:
+        runer = unittest.TextTestRunner(stream=f, verbosity=2)  # verbosity=2 输出详细日志
+        runer.run(suite)
+
+  HTMLTestRunner输出方式：
+    with open(report_file, 'wb') as fl:
+        runner1 = HTMLTestRunner.HTMLTestRunner(title='测试标题', description='描述', stream=fl)
+        runner1.run(suite)
+
+  BeautifulReport输出方式：
+    br = BeautifulReport(suite04)
+    br.report(filename="html_report1.html", description='测试报告', report_dir=report_dir)
+
+8、用例跳过的控制方法
+  @unittest.skip(reason) 无条件跳过用例, reason是说明原因
+  @unittest.skipIf(condition, reason) condition为true时跳过用例
+  @unittest.skipUnless(condition, reason) condition为False的时候跳过
+
+
+# #############################################
+# 时间：20230608
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+四、pytest自动化测试框架的使用
+
+pytest非Python系统库，需要使用pip手动安装，他的插件较为丰富，可以通过控制插件完善各种扩展控制，常见如：
+    pytest-selenium集成selenium完成网页控制
+    pytest-html完成html测试报告的生成
+    pytest-rerunfailures失败的case重新执行
+    pytest-xdist多CPU并发执行
+
+1、pytest编写的测试用例即可以是函数式，也可以是类形式，用例内容格式较为自由，唯一的限制在于，文件名、方法名要使用test_开头或者以_test结尾，类名要使用Test开头（注意不能带有init方法），这样才会被pytest识别为要执行的测试用例
+
+2、pytest兼容unittest，以unittest规范编写的用例也可以被pytest识别
+
+3、pytest执行测试用例提供了丰富的执行参数，可以控制用例的精准执行，例如如下的执行命令：
+pytest -vs xxx.py --html=report.html --alluredir=allure_files --coolect-only -k "str or Add and not list" -m xxx
+这里节选部分常用参数做一点简单的描述：
+    -v，--verbose 展示详细的结果
+    -q，--quiet 展示简略结果
+    -s 可以把用例运行过程中的print打印或者log输出内容展示出来
+    --html 指定生成的html报告文件
+    --alluredir 指定配合allure展示报告的json文件目录
+    --coolect-only 收集找到的用例，但不执行
+    -k 筛选关键字控制用例的执行与否，使用and，or，not模糊匹配用例名称中包含的关键字
+    -m 执行通过@pytest.mark.xxx标记的部分用例，还可以通过测试目录下的pytest.ini控制执行
+    -x, --exitfirst 遇到失败停止
+    --maxfail=num 遇到多少次失败就停止
+
+4、测试夹具，通过@pytest.fixture来完成用例前后置的控制，可以结合conftest.py文件存放使用，与用例文件放在同一层级，无需使用import引入，由框架自动提取
+    @pytest.fixture(scope=“”,params=“”,autouse=“”,ids=“”,name=“”)
+        scope 表示作用域，主要参数有function，class，module，package，session
+            function 默认级别，同一个函数级别内有效，每个函数调用前执行一次
+            class 同一个类内部生效，类初始化时执行一次
+            module 同一个py文件内生效，执行py文件时执行一次
+            package 同一个package内生效，可以配置在conftest.py配置文件中，实现全局生效
+            session 多个文件调用一次，可以跨.py文件调用，可以配置在conftest.py配置文件中，实现全局生效
+        params 参数传输方式，主要支持列表[],元组()，字典列表[{},{}],字典元组({},{})
+        autouse=True：自动使用，默认False
+        ids：当使用params参数化时，给每一个值设置一个变量名。意义不大
+        name：给表示的是被@pytest.fixture标记的方法取一个别名
+
+    同unittest一样，pytest也可以通过setup/teardown完成前置和后置处理
+        setup_module()和teardown_module()模块级别，在模块执行前后执行
+        setup_class()和teardown_class()类级别，在类初始化和执行结束时调用
+        setup()和deardown()方法级别，在函数或者方法执行前后调用
+
+5、pytest同样也提供了跳过执行用例的方法，如：
+    @pytest.mark.skip(reason=xxx) 无条件跳过
+    @pytest.mark.skipif(condition,reason=xxx) condition为true时跳过
+    @pytest.mark.skipunless(condition,reason=xxx) condition为false时跳过
+
+6、pytest参数传递的方法，可以通过@pytest.mark.parametrize()装饰器完成参数的传递
+    6.1、@pytest.mark.parametrize(args_name,args_value)传递参数的方式，其中
+        args_name表示参数名，
+        args_value表示参数值，可以是列表、元组、字典列表、字典元组，遍历序列值传入参数执行用例
+        形式类似@pytest.mark.parametrize('args',['a','b','c'])
+    6.2、@pytest.mark.parametrize(args_key,args_value)采用类似解包方式传输参数
+        类似@pytest.mark.parametrize('name,age',[['jack','38'],['mike','18']])
+
+7、断言的使用
+    pytest常用的断言格式assert condition
+
+8、pytest可以结合allure-pytest插件生成相对精美的测试报告
+    8.1、首先需要使用pip install allure-pytest安装插件，然后需要下载安装allure工具后配置环境变量，可以在命令行窗口输入allure检测命令是否安装成功
+        下载路径：https://github.com/allure-framework/allure2/releases
+    8.2、然后需要在pytest执行命令中增加--alluredir=allure_files参数
+    8.3、使用allure命令生成allure报告并在当前网页呈现
+        allure generate ./allure_files -o ./reports/html --clean
+        allure open -h 10.46.140.112 -p 9957 ./reports/html
+
+allure generate ./test_pytest/reports/allure_files -o ./test_pytest/reports/html --clean
+allure open -h 10.46.140.112 -p 9957 ./test_pytest/reports/html
+
+allure serve ./test_pytest/reports/allure_files
+
+http://10.46.140.112:9957/index.html
+
+# #############################################
+# 时间：20230610
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+五、Postman接口测试方法
+
+http协议的get和post方法的差异
+
+一、chatgpt操作步骤
+1、安装Postman：
+Postman可以从官方网站（https://www.postman.com/downloads/）下载并安装。根据自己的操作系统选择对应的版本。
+安装Postman时会遇到安装依赖软件.net framwork失败的情况，此时可以直接从如下链接下载安装
+.net 4.5的安装：https://www.microsoft.com/en-us/download/confirmation.aspx?id=42642
+2、创建测试集合Create Collection——相当于测试套
+在Postman界面中可以创建测试集合并添加测试用例。集合是测试用例的容器，方便管理和执行测试用例。
+3、创建测试用例：
+在刚才创建的集合中，可以添加测试用例。Add folder用于创建文件夹用于管理测试用例，Add request用于添加测试用例。
+4、发送请求：
+在测试用例中可以选择请求方式，如GET、POST、PUT、DELETE等，并添加请求参数和请求头等信息。请求参数和请求头的值可以使用Postman的变量来动态的获取。
+GET的请求参数在Params中添加；Post的请求参数在Body中添加，常用形式form-data
+5、验证响应：
+Postman发送请求后，会收到API的响应。可以在响应中验证请求是否正确。对于XML或JSON格式的响应，可以使用Postman提供的格式美化和高亮功能来更方便的查看响应内容。
+6、断言检查：
+可以通过添加断言验证API响应是否符合预期结果。Postman内置了许多断言函数，可以根据需要选择使用。
+形如：tests['判断是否获取到了城市编码'] =cityCode != null
+7、执行测试：
+在测试用例编写完后，可以单独运行测试用例或运行整个测试集合。运行测试时可以看到测试结果，并能根据结果进行调整。
+
+二、参数提取方式
+Postman中的参数处理在http请求中直接提取外，还可以通过Environments环境变量设置和全局变量中传入
+当然实际工作中比较常用的还是在处理响应时提取或设置变量，方法如下：
+# 获取指定的环境变量用于获取响应后的判断
+const cityName = pm.environment.get("cityName");
+# 将获取到响应的变量提取到全局变量中
+pm.globals.set("city_code",cityCode);
+
+三、postman使用cookies的方法
+用于测试的网址
+电商首页：http://www.testingedu.com.cn:8000/
+登录页面：http://www.testingedu.com.cn:8000/index.php/Home/user/login.html
+购物车页面：http://www.testingedu.com.cn:8000/index.php/Home/Cart/index.html
+http://www.testingedu.com.cn:8000/index.php?m=Home&c=Cart&a=header_cart_list
+
+登陆调用接口：http://www.testingedu.com.cn:8000/index.php?m=Home&c=User&a=do_login&t=0.3508523582926
+查看购物车调用接口：http://www.testingedu.com.cn:8000/index.php?m=Home&c=Cart&a=header_cart_list
+
+# #############################################
+# 时间：20230610
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+六、使用JMeter进行性能测试的步骤：
+
+一、chatgpt使用说明
+1、下载并安装JMeter：
+JMeter可以从官方网站（https://jmeter.apache.org/download_jmeter.cgi）下载。根据自己的操作系统下载并安装JMeter。
+2、创建测试计划：
+在JMeter中，测试计划是测试的基本单位。在左侧的树形结构中，右键点击“测试计划”，选择“添加”-“线程组”，创建一个线程组。
+3、添加线程：
+在刚创建的线程组中，右键点击选择“添加”-“线程（用户）”，配置线程数、循环次数等相关参数。
+4、添加协议：
+对于Web应用程序，可以添加HTTP协议来测试应用程序的性能。在刚才创建的线程组中，右键点击选择“添加”-“协议”-“HTTP请求默认值”，在“Web服务器”中输入应用程序的地址。
+5、添加请求：
+在刚才添加的线程中，右键选择“添加”-“HTTP请求”，在输入框中输入请求的URL。
+6、配置请求参数：
+可以在HTTP请求中添加参数，如GET/POST方法、请求参数、请求头、Cookie等。
+7、添加监听器：
+JMeter提供很多种监听器来显示测试结果。可以通过添加监听器来观察测试结果。
+8、运行测试：
+配置完成后，点击菜单栏中的“运行”-“启动”按钮来启动测试。
+
+二、快速理解
+1、基本设置方法，主要可以参考下述快速操作去理解
+测试计划-->线程组--|->取样器--http请求——用于配置请求的url、请求方法、请求参数等等
+                  |->监听器--查看结果树/聚合报告/图形结果/汇总图——用于呈现请求的响应结果
+
+2、强化操作，主要是参数设置和断言设置
+参数设置蛀牙有3种设置方法：前置处理器下的用户参数、配置元件下的用户定义的变量、配置元件下的CSV数据文件设置
+断言设置根据请求响应的具体情况选择断言类型，例如响应断言
+
+参数的引用方法${param}
+
+3、进阶操作，http cookie管理器，前置和后置处理器
+从响应中提取参数的方法：添加后置处理器——json提取器/边界提取器/正则表达式提取器等等，选择body和响应头提取数据
+
+
+# #############################################
+# 时间：20230610
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+七、linux指令学习路径
+
+1、linux常用指令：cd/rm/mkdir/cat/ls/ifconfig/chown/chmod/tar/cp/mv/scp/wget/pwd/find/where is/which/sudo
+2、linux进阶指令：find/grep/sed/awk/ps/top/uname/rpm/yum/apt-get/zypper/df -h/fdisk -l/mount/systemctl/service/ifconfig
+3、shell脚本：日志控制
+
+# #############################################
+# 时间：20230610
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+八、简单的前端页面部署程序之flask简单上手试用
+
+python中常见的web框架有Django、Tornado、Flask、Bottle，由于当前我需要部署一个简单的页面用于接收和传输用户的参数，因此使用flask就完全可以满足要求了，这里对flask的使用做一点简单的总结
+
+swagger和openAPI的学习
+
+# #############################################
+# 时间：20230610
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+九、appium的安装配置使用
+
+一、配套软件安装
+1、安装jdk
+2、安装nodejs
+3、安装appium服务器，可以同时将GUIserver一起装上
+4、安装appium-inspector
+5、安装adb和对应的adb手机驱动-华为手机助手，这里要根据手机类型来安装
+6、pip install Appium-Python-Client
+7、安装android studio
+
+二、环境配置
+1、安装上述软件时配置对应的环境变量
+2、手机需要打开开发者模式，然后在开发者模式中撤销USB调试授权，在弹出的的弹框中选择信任电脑的SHA值
+3、接下来使用adb命令行获取设备信息和app信息
+4、使用appium-inspector连接手机App进行提取控制元素
+注意：连接不成功时可以考虑重启appium服务器
+
+三、获取手机信息的方法
+1、通过USB连接手机，开启开发者调试模式后下发adb命令获取到设备版本、设备名称的信息
+华为Mate50E的appium连接配置
+    "platformVersion": "12",
+    "deviceName": "CET-AL60",
+    "platformName": "Android",
+获取方法：
+adb shell getprop ro.build.version.release
+adb devices -l
+
+2、将手机和PC连接在统一局域网下，查找到手机连接WiFi的ip后，通过adb命令无线连接到手机，命令如下：
+adb kill-server
+adb tcpip 5555
+adb connect device_ip:5555
+然后在通过步骤1中的命令获取到手机的设备版本、设备名称信息
+
+四、获取手机App信息的方法
+先打开指定App，然后在通过adb命令获取app信息，如计算器的App信息为：
+    "appPackage": "com.huawei.calculator",
+    "appActivity": "com.huawei.calculator.Calculator",
+获取方法：
+adb shell dumpsys activity | findstr "mResume"
+
+五、android自动化元素辅助定位的工具，个人使用的主要有3种，appium inspector/uiautomatorviewer/weditor，其中
+    1、appium inspector：
+        优势：支持ios和android
+        劣势：需配合appium server一起安装使用；使用网络连接时，按钮点击、输入，页面刷新时，切换过程中耗时较长，建议使用USB连接使用
+    2、uiautomatorviewer——限制太大，当前个人不再使用
+        优势：android sdk安装好后自带
+        劣势：但仅支持android，并且android8以上需要修改批处理脚本，强制依赖Java1.8版本
+    3、weditor——基于uiautomator2库进行元素控制
+        优势：支持ios和android，无需事先连接appium服务器；无线连接手机进行元素定位时，元素操作的切换耗时较短
+        劣势：需要额外使用python的pip安装；可能会存在版本不配套问题，此时需要指定版本安装 pip install weditor==0.6.4；启动需要python -m uiautomator2 init --> python -m weditor
+
+注意：使用上述3种工具定位元素信息可能不一致，建议根据需要进行选择使用
+
+# #############################################
+# 时间：20230621
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+十、python打开windows下网页后控制文件上传控件的方法——pywinauto
+
+1、首先要安装有pywinauto模块
+pip install pywinauto
+
+2、引入模块内的指定方法后，进行登陆操作，可以通过ViewWizard工具查找windows下文件上传控件的元素的类名用于控制该元素的输入、回车、点击等等操作
+from pywinauto import Desktop
+from pywinauto.keyboard import send_keys
+
+# 创建一个操作桌面窗口的对象
+app=Desktop()
+dlg=app['打开'] #窗口标题打开
+# 打开文件地址
+dlg.window(class_name='ToolbarWindow32', title_re=".*地址.*").click() #选择文件地址输入的控件
+send_keys('E:\\codework\\web_script_excute\\resource') #输入文件地址
+send_keys('{VK_RETURN}') #回车E:\codework\web_script_excute\resource
+# 选中指定文件并打开
+dlg['文件名(&N):Edit'].type_keys('test_pic_01.png') # 选择文件名输入的控件输入文件名
+dlg['打开(&O)'].click() #点击打开按钮
+
+# #############################################
+# 时间：20230622
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+十一、python通过selenium登陆后，保持登陆切换网页的方法
+
+针对selenium控制网页免登陆方法总结:
+方法一：使用已打开的完成了网页登陆操作的浏览器来避免已登录
+    需要在浏览器快捷方式属性页的快捷栏后面添加 --remote-debugging-port=9222 --user-data-dir="C:\selenium\ChromeProfile"
+方法二：设置用户数据目录免登陆——该方法未实现
+    将selenium运行chrome的数据临时存储目录设置为长期目录
+方法三：登陆指定网址获取cookies后，用于切换到其他网页时保持登陆
+    cookies的获取使用方法cookies = driver.get_cookies()
+    cookie添加是需要根据需要过滤，并逐个添加
+方法四：在新标签页或者新窗口中打开登陆连接后完成登陆
+
+# #############################################
+# 时间：20230630
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+十二、python使用selenium操作网页的一些常用方法方法
+
+1、界面元素查找的方法
+需要引入模块webdriver以及By
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+使用方法：
+driver=webdriver.Chrome()
+kw1=c.find_element(By.ID,'kw')
+kw2=c.find_element_by_id('kw')
+
+find_element                         #通过指定方法查找指定的第一个元素(需指定两个参数)
+find_element_by_class_name           #通过Class name查找指定的第一个元素
+find_element_by_css_selector         #通过CSS选择器查找指定的第一个元素
+find_element_by_id                   #通过ID查找指定的第一个元素
+find_element_by_link_text            #通过链接文本获取指定的第一个超链接(精确匹配)
+find_element_by_name                 #通过Name查找指定的第一个元素
+find_element_by_partial_link_text    #通过链接文本获取指定的第一个超链接(模糊匹配)
+find_element_by_tag_name             #通过标签名查找指定的第一个元素
+find_element_by_xpath                #通过Xpath语法来指定的第一个元素
+find_elements                        #通过指定方法查找所有元素数组(需指定两个参数)
+find_elements_by_class_name          #通过Class name查找所有元素数组
+find_elements_by_css_selector        #通过CSS选择器查找所有元素数组
+find_elements_by_id                  #通过ID查找所有元素数组
+find_elements_by_link_text           #通过链接文本获取所有超链接数组(精确匹配)
+find_elements_by_name                #通过Name查找所有元素数组
+find_elements_by_partial_link_text   #通过链接文本获取所有超链接数组(模糊匹配)
+find_elements_by_tag_name            #通过标签名查找所有元素数组
+find_elements_by_xpath               #通过Xpath语法来查找所有元素数组
+
+2、浏览器窗口操作
+driver=webdriver.Chrome()
+
+driver.maximize_window()#最大化
+driver.fullscreen_window() #全屏
+driver.minimize_window() #最小化
+driver.get_window_position() #获取窗口的坐标
+driver.get_window_rect()#获取窗口的大小和坐标
+driver.get_window_size()#获取窗口的大小
+driver.set_window_position(100,200)#设置窗口的坐标
+driver.set_window_rect(100,200,32,50)    #设置窗口的大小和坐标
+driver.set_window_size(400,600)#设置窗口的大小
+driver.current_window_handle   #返回当前窗口的句柄
+driver.window_handles         #返回当前会话中的所有窗口的句柄
+
+driver.save_screenshot('1.png')#截图，只支持PNG格式
+driver.get_screenshot_as_png() #获取当前窗口的截图作为二进制数据
+driver.get_screenshot_as_base64() #获取当前窗口的截图作为base64编码的字符串
+
+driver.forward() #前进
+driver.back()  #后退
+driver.refresh()#刷新
+
+driver.close() #关闭当前标签页
+driver.quit() #关闭浏览器并关闭驱动
+
+3、cookies内容获取——常用于免登陆
+driver.get_cookie('BAIDUID') #获取指定键的Cookies
+driver.get_cookies()         #获取所有的Cookies
+for y in driver.get_cookies():
+   x=y
+   if x.get('expiry'):
+       x.pop('expiry')     
+   driver.add_cookie(x) #添加Cookies  
+driver.delete_cookie('BAIDUID') #删除指定键的Cookies内容
+driver.delete_all_cookies() #删除所有cookies
+
+4、元素的操作
+driver.get('https://www.baidu.com')
+kw1=driver.find_element(By.ID,'kw')
+
+kw1.clear()        #清除元素的值
+kw1.click()        #点击元素
+kw1.id             #Selenium所使用的内部ID
+kw1.get_property('background') #获取元素的属性的值
+kw1.get_attribute('id') #获取元素的属性的值
+kw1.location       #不滚动获取元素的坐标
+kw1.location_once_scrolled_into_view  #不滚动且底部对齐并获取元素的坐标
+kw1.parent         #父元素
+kw1.send_keys('')  #向元素内输入值
+kw1.send_keys(Keys.ENTER)  #元素回车
+kw1.size           #大小
+kw1.submit         #提交
+kw1.screenshot('2.png') #截取元素形状并保存为图片
+kw1.tag_name       #标签名
+kw1.text           #内容，如果是表单元素则无法获取
+kw1.is_selected()  #判断元素是否被选中
+kw1.is_enabled()   #判断元素是否可编辑
+kw1.is_displayed   #判断元素是否显示
+kw1.value_of_css_property('color') #获取元素属性的值
+kw1._upload('2.png') #上传文件
+
+5、selenium的鼠标键盘操作
+需要引入模块keys和ActionChains进行操作
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+
+click(on_element=None)                 #鼠标左键单击
+click_and_hold(on_element=None)        #单击鼠标左键，不松开
+context_click(on_element=None)         #单击鼠标右键
+double_click(on_element=None)          #双击鼠标左键
+drag_and_drop(source,target)           #拖拽到某个元素然后松开
+drag_and_drop_by_offset(source,xoffset,yoffset) #拖拽到某个坐标然后松开
+key_down(value,element=None)     #按下键盘上的某个键
+key_up(value, element=None)      #松开键盘上的某个键
+move_by_offset(xoffset, yoffset)  #鼠标从当前位置移动到某个坐标
+move_to_element(to_element)        #鼠标移动到某个元素
+move_to_element_with_offset(to_element, xoffset, yoffset) #移动到距某个元素（左上角坐标）多少距离的位置
+pause(seconds)                  #暂停所有输入(指定持续时间以秒为单位)
+perform()                       #执行所有操作
+reset_actions()                 #结束已经存在的操作并重置
+release(on_element=None)       #在某个元素位置松开鼠标左键
+send_keys(*keys_to_send)        #发送某个键或者输入文本到当前焦点的元素
+send_keys_to_element(element, *keys_to_send) #发送某个键到指定元素
+
+6、selenium的一些浏览器属性设置
+from selenium.webdriver.chrome.options import Options
+o=Options()
+
+o.add_argument('--headless')#无界面浏览
+o.add_argument('--window-size=600,600') #设置窗口大小
+o.add_argument('--incognito') #无痕模式
+o.add_argument('--disable-infobars') #去掉chrome正受到自动测试软件的控制的提示
+o.add_argument('user-agent="XXXX"') #添加请求头
+o.add_argument("--proxy-server=http://200.130.123.43:3456")#代理服务器访问
+o.add_experimental_option('excludeSwitches', ['enable-automation'])#开发者模式
+o.add_experimental_option("prefs",{"profile.managed_default_content_settings.images": 2})#禁止加载图片
+o.add_experimental_option('prefs',
+{'profile.default_content_setting_values':{'notifications':2}}) #禁用浏览器弹窗
+o.add_argument('blink-settings=imagesEnabled=false')  #禁止加载图片
+o.add_argument('lang=zh_CN.UTF-8') #设置默认编码为utf-8
+o.add_extension(create_proxyauth_extension(
+           proxy_host='host',
+           proxy_port='port',
+           proxy_username="username",
+           proxy_password="password"
+       ))# 设置有账号密码的代理
+o.add_argument('--disable-gpu')  # 这个属性可以规避谷歌的部分bug
+o.add_argument('--disable-javascript')  # 禁用javascript
+o.add_argument('--hide-scrollbars')  # 隐藏滚动条
+o.binary_location=r"C:\Users\Administrator\AppData\Local\Google\Chrome\Application" #指定浏览器位置
+o.add_argument('--no-sandbox')  #解决DevToolsActivePort文件不存在的报错
+
+7、浏览器界面判断
+需要引入模块Expected_Conditions，简称为EC
+from selenium.webdriver.support import expected_conditions as EC
+
+EC.title_contains('')(c)#判断页面标题是否包含给定的字符串
+EC.presence_of_element_located('')(c) #判断某个元素是否加载到dom树里，该元素不一定可见
+EC.url_contains('')(c) #判断当前url是否包含给定的字符串
+EC.url_matches('')(c) #匹配URL
+EC.url_to_be('')(c)  #精确匹配
+EC.url_changes('')(c) #不完全匹配
+EC.visibility_of_element_located('')(c) #判断某个元素是否可见,可见代表元素非隐藏元素
+EC.visibility_of('')(c)   #跟上面一样，不过是直接传定位到的element
+EC.presence_of_all_elements_located('')(c) #判断是否至少有1个元素存在于dom树中
+EC.visibility_of_any_elements_located('')(c) #判断是否至少一个元素可见，返回列表
+EC.visibility_of_all_elements_located('')(c) #判断是否所有元素可见，返回列表
+EC.text_to_be_present_in_element('')(c) #判断元素中的text是否包含了预期的字符串
+EC.text_to_be_present_in_element_value('')(c)#判断元素中value属性是否包含预期的字符串
+EC.frame_to_be_available_and_switch_to_it('')(c) # 判断该frame是否可以switch进去
+EC.invisibility_of_element_located('')(c) #判断某个元素是否不存在于dom树或不可见
+EC.element_to_be_clickable('')(c) #判断某个元素中是否可见并且可点击
+EC.staleness_of('')(c)  #等某个元素从dom树中移除
+EC.element_to_be_selected('')(c)  #判断某个元素是否被选中了,一般用在下拉列表
+EC.element_located_to_be_selected('')(c) #判断元组中的元素是否被选中
+EC.element_selection_state_to_be('')(c) #判断某个元素的选中状态是否符合预期
+EC.element_located_selection_state_to_be('')(c) #跟上面一样，只不过是传入located
+EC.number_of_windows_to_be('')(c)  #判断窗口中的数字是否符合预期
+EC.new_window_is_opened('')(c)  #判断新的窗口是否打开
+EC.alert_is_present('')(c)  #判断页面上是否存在alert
+
+8、浏览器弹窗处理
+
+
+# #############################################
+# 时间：20230701
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+十三、mysql数据库的基本使用
+
+1、数据库和数据表的创建使用
+create database usr_contact_info; # 创建名为usr_contact_info的数据库
+
+2、使用数据库usr_contact_info用于创建数据表
+use usr_contact_info; # 使用数据库usr_contact_info
+create table usr_contact_info(
+`序号` INT UNSIGNED AUTO_INCREMENT,
+`姓名` VARCHAR(10) NOT NULL,
+`联系方式` VARCHAR(11) NOT NULL,
+`住址` VARCHAR(100) NOT NULL,
+`接待人` VARCHAR(10) NOT NULL,
+PRIMARY KEY ( `序号` )); # 创建带有列值的数据表usr_contact_info
+
+3、插入数据
+INSERT INTO usr_contact_info ( 姓名, 联系方式, 住址, 接待人 )
+                       VALUES
+                       ( '张飞', '18654265642', '都市武侯区蜀都大道富贵花园小区9栋1单元', '王凯' );
+
+4、查询、更新、删除数据
+格式如下：
+SELECT column_name,column_name FROM table_name [WHERE Clause][LIMIT N][ OFFSET M]
+UPDATE table_name SET field1=new-value1, field2=new-value2 [WHERE Clause]
+DELETE FROM table_name [WHERE Clause]
+
+5、扩展方法使用
+like子句——用于匹配类似"%match_str"的数据
+union操作符——用于将不同表中的相同列中查询的数据展示出来，带all参数时可以包含重复数据
+order by子句——用于指定按照哪个字段哪种方式进行排序
+group by子句——用于根据指定的字段值对结果集进行分组，另外在分组的列可使用count/sum/avg等函数提取字段数据信息
+join on操作符——主要有inner join/left join/right join三种方式连接不同数据表，通过on判断子句实现两表之间查询字段的过滤
+
+
+# #############################################
+# 时间：20230701
+# 姓名：田鑫
+# 邮箱：965622832@qq.com
+# #############################################
+十四、python使用mysql数据库的基本方法
+
+1、首先需要安装一个支持mysql的库，例如：
+pip install pymysql
+
+2、连接指定的数据库
+# 打开数据库连接，参数1：主机名或IP；参数2：用户名；参数3：密码；参数4：数据库名
+db = pymysql.connect(host='localhost', user='root', password='Tianxin_2015', database='usr_contact_info')
+
+3、创建新的数据表
+# 使用cursor()创建一个cursor对象
+cursor = db.cursor()
+# 创建数据库和数据表
+cursor.execute("drop table if exists usr_contact_info")
+sql = """create table usr_contact_info (
+         `序号`  INT UNSIGNED AUTO_INCREMENT,
+         `姓名`  CHAR(10),
+         `联系方式` CHAR(11),  
+         `住址` CHAR(30),
+         `接待人` CHAR(10),
+         PRIMARY KEY ( `序号` ) )"""
+cursor.execute(sql)
+
+4、插入外部数据
+# 外部导入的数据
+data_test = [
+            ['张三','15023481157','成都市武侯区蜀都大道富贵花园小区2栋1单元','王凯'],
+            ['李四','15420135526','成都市武侯区蜀都大道富贵花园小区12栋2单元','王凯'],
+            ['王五','18654265531','成都市武侯区蜀都大道富贵花园小区9栋1单元','王凯'],
+            ['赵六','19454265623','成都市武侯区蜀都大道富贵花园小区8栋1单元','王凯']
+        ]
+cursor.executemany("insert into usr_contact_info(姓名,联系方式,住址,接待人) values (%s,%s,%s,%s)", data_test)
+db.commit()
+
+5、查询数据表的内容
+# 使用execute()方法执行SQL查询
+rs = cursor.execute("select * from usr_contact_info;")
+print(rs)
+# 查询第一条数据
+rs_data_one = cursor.fetchone()
+print(rs_data_one)
+# 查询所有数据
+rs_data_all = cursor.fetchall()
+print(rs_data_all)
